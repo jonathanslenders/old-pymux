@@ -1,6 +1,7 @@
 from libpymux.session import Session
 from libpymux.log import logger
 from libpymux.window import Window
+from libpymux.invalidate import Redraw
 
 from pymux.panes import BashPane
 
