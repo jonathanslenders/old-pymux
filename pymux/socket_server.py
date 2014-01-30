@@ -59,7 +59,7 @@ class ServerProtocol(asyncio_amp.AMPProtocol):
     @AttachClient.responder
     def _attach_client(self):
         self.input_protocol = SocketServerInputProtocol(self.session, self) # TODO: pass weakref of session
-        self.renderer = AmpRenderer(weakref.ref(self.session), self) # TODO: pass weakref of session
+        self.renderer = AmpRenderer(self)
         self.session.add_renderer(self.renderer)
 
     @SendKeyStrokes.responder

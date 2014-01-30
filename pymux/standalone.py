@@ -29,7 +29,7 @@ def run():
         with alternate_screen(output_transport.write):
             # Create session and renderer
             session = PyMuxSession()
-            renderer = PipeRenderer(weakref.ref(session), output_transport.write)
+            renderer = PipeRenderer(output_transport.write)
             session.add_renderer(renderer)
 
             # handle resize events

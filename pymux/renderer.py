@@ -6,8 +6,8 @@ class AmpRenderer(Renderer):
     """
     Renderer which sends the stdout over AMP to the client.
     """
-    def __init__(self, session_ref, amp_protocol):
-        super().__init__(session_ref)
+    def __init__(self, amp_protocol):
+        super().__init__()
         self.amp_protocol = amp_protocol
 
     @asyncio.coroutine
