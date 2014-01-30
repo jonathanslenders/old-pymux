@@ -72,9 +72,9 @@ def _run():
                     lambda:InputProtocol(protocol.send_input), os.fdopen(0, 'rb', 0))
 
     # Send terminal size to server when it changes
-    def sigwinch_handler(n, frame):
+    def sigwinch_handler():
         loop.call_soon(protocol.send_size)
-    signal.signal(signal.SIGWINCH, sigwinch_handler)
+    loop.add_signal_handler(signal.SIGWINCH, sigwinch_handler)
 
     with alternate_screen(output_transport.write):
         with raw_mode(0):
