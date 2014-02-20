@@ -2,7 +2,8 @@
 
 from asyncio.protocols import BaseProtocol
 
-from .amp_commands import WriteOutput, SendKeyStrokes, GetSessions, SetSize, DetachClient, AttachClient
+from pymux.amp_commands import WriteOutput, SendKeyStrokes, GetSessions, SetSize, DetachClient, AttachClient
+from pymux.socket_server import start_server
 
 from libpymux.session import Session
 from libpymux.std import raw_mode
@@ -13,6 +14,7 @@ import asyncio_amp
 import os
 import signal
 import sys
+import socket
 
 __all__ = ('start_client', )
 
@@ -55,7 +57,7 @@ class InputProtocol(BaseProtocol):
 
 
 @asyncio.coroutine
-def _run():
+def _run(socket_name):
     f = asyncio.Future()
 
     output_transport, output_protocol = yield from loop.connect_write_pipe(
@@ -65,7 +67,9 @@ def _run():
     def factory():
         return ClientProtocol(output_transport, lambda: f.set_result(None))
 
-    transport, protocol = yield from loop.create_connection(factory, 'localhost', 4376)
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.connect(socket_name)
+    transport, protocol = yield from loop.create_connection(factory, sock=s)
 
     # Input
     input_transport, input_protocol = yield from loop.connect_read_pipe(
@@ -85,9 +89,13 @@ def _run():
             yield from f
 
 
-def start_client():
-    loop.run_until_complete(_run())
 
+def start_client(socket_name=None):
+    """
+    Start a pymux client. When a socket_name has been given, connect to that
+    client, otherwise start a server in the background and use that one.
+    """
+    if not socket_name:
+        socket_name = start_server(daemonized=True)
 
-if __name__ == '__main__':
-    start_client()
+    loop.run_until_complete(_run(socket_name))

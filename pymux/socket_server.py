@@ -4,14 +4,19 @@ from asyncio_amp.protocol import MAX_VALUE_LENGTH
 
 import asyncio
 import asyncio_amp
-import logging
-import weakref
+import getpass
 import json
+import logging
+import socket
+import sys
+import time
+import weakref
 
 from pymux.session import PyMuxSession
 from pymux.amp_commands import WriteOutput, SendKeyStrokes, GetSessions, SetSize, DetachClient, AttachClient, GetSessionInfo, NewWindow
 from pymux.input import PyMuxInputProtocol
 from pymux.renderer import AmpRenderer
+from pymux.daemonize import daemonize
 
 from libpymux.log import logger
 
@@ -113,7 +118,7 @@ class ServerProtocol(asyncio_amp.AMPProtocol):
 
 
 @asyncio.coroutine
-def run():
+def run(socket_):
     session = PyMuxSession()
     connections = []
 
@@ -127,9 +132,9 @@ def run():
         return protocol
 
     # Start AMP Listener.
-    server = yield from loop.create_server(protocol_factory, 'localhost', 4376)
+    server = yield from loop.create_server(protocol_factory, sock=socket_)
 
-    # Run the session (this is blocking untill all panes in this session are
+    # Run the session (this is blocking until all panes in this session are
     # finished.)
     yield from session.run()
 
@@ -137,9 +142,55 @@ def run():
     for c in connections:
         result = yield from c.call_remote(DetachClient)
 
-def start_server():
-    loop.run_until_complete(run())
+
+def bind_socket(socket_name=None):
+    """
+    Find a socket to listen on.
+    Returns the socket.
+    """
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+    if socket_name:
+        s.bind(socket_name)
+        return socket_name, s
+    else:
+        i = 0
+        while True:
+            try:
+                socket_name = '/tmp/pymux.sock.%s.%i' % (getpass.getuser(), i)
+                s.bind(socket_name)
+                return socket_name, s
+            except OSError:
+                i += 1
+
+                # When 100 times failed, cancel server
+                if i == 100:
+                    logging.warning('100 times failed to listen on posix socket. Please clean up old sockets.') # XXXX
+                    raise
 
 
-if __name__ == '__main__':
+def start_server(socket_name=None, daemonized=False):
+    """
+    Run the server on a socket.
+    When a socket_name is given, use that one.
+    When daemonized: run server daemonized, but return socket name.
+    """
+    socket_name, s = bind_socket(socket_name)
+
+    if daemonized:
+        if daemonize():
+            # In daemon
+            loop.run_until_complete(run(s))
+            sys.exit()
+        else:
+            # In parent.
+            time.sleep(.2) # I need to wait at least 0.01s before the socket is
+                           # completely ready in the child. I don't understand
+                           # why...
+            return socket_name
+    else:
+        loop.run_until_complete(run(s))
+
+
+if __name__ == '__main__': # XXX: remove main function here.
     start_server()
