@@ -7,6 +7,10 @@
   pymux attach SOCKET
   pymux session-info
   pymux new-window
+  pymux -h | --help
+
+Options:
+  -h, --help             : Display this help text.
 """
 
 import sys
