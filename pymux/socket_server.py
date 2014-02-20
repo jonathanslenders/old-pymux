@@ -118,8 +118,8 @@ class ServerProtocol(asyncio_amp.AMPProtocol):
 
 
 @asyncio.coroutine
-def run(socket_):
-    session = PyMuxSession()
+def run(socket_name, socket_):
+    session = PyMuxSession(socket_name)
     connections = []
 
     def protocol_factory():
@@ -180,7 +180,7 @@ def start_server(socket_name=None, daemonized=False):
     if daemonized:
         if daemonize():
             # In daemon
-            loop.run_until_complete(run(s))
+            loop.run_until_complete(run(socket_name, s))
             sys.exit()
         else:
             # In parent.
@@ -189,7 +189,7 @@ def start_server(socket_name=None, daemonized=False):
                            # why...
             return socket_name
     else:
-        loop.run_until_complete(run(s))
+        loop.run_until_complete(run(socket_name, s))
 
 
 if __name__ == '__main__': # XXX: remove main function here.

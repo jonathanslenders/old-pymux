@@ -10,10 +10,11 @@ import concurrent
 
 
 class PyMuxSession(Session):
-    def __init__(self):
+    def __init__(self, pymux_pane_env=''):
         super().__init__()
         self.pane_executor = concurrent.futures.ThreadPoolExecutor(1024)
         self.pane_runners = [ ] # Futures
+        self.pymux_pane_env = pymux_pane_env
 
         # Create first window/pane.
         self.create_new_window()
@@ -23,13 +24,13 @@ class PyMuxSession(Session):
         window = Window()
         self.add_window(window)
 
-        pane = BashPane(self.pane_executor)
+        pane = BashPane(self.pane_executor, self.pymux_pane_env)
         window.add_pane(pane)
         self._run_pane(window, pane)
 
 
     def split_pane(self, vsplit):
-        pane = BashPane(self.pane_executor)
+        pane = BashPane(self.pane_executor, self.pymux_pane_env)
         self.active_window.add_pane(pane, vsplit=vsplit)
         self._run_pane(self.active_window, pane)
 
