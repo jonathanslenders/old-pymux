@@ -14,4 +14,9 @@ pure Python.
 Running
 -------
 
-Right now, do: ```python client.py run```
+Right now, do:
+
+```
+python setup.py install
+pymux
+```
