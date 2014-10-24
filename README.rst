@@ -16,7 +16,8 @@ Running
 
 Right now, do:
 
-```
-python setup.py install
-pymux
-```
+::
+
+    python setup.py install
+    pymux
+
